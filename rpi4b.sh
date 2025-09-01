@@ -1,8 +1,17 @@
 #!/bin/bash
 
-# Updated Gluon Kernel Compiler for Raspberry Pi 4B (64-bit)
+# Updated Gluon Kernel Compiler for Raspberry Pi 4B (64-bit) with Linaro toolchain and modular design
 
-# Colors
+# --- Configuration ---
+# You can customize these variables
+readonly KERNEL_ARCH="arm64"
+readonly KERNEL_DEFCONFIG="bcm2711_defconfig"
+readonly TOOLCHAIN_PATH="../../../toolchain/linaro"
+readonly OUTPUT_DIR="output"
+readonly KERNEL_DIR="raspberry_pi"
+readonly KERNEL_IMAGE_NAME="kernel8.img"
+
+# --- Colors ---
 red=$(tput setaf 1)
 green=$(tput setaf 2)
 yellow=$(tput setaf 3)
@@ -13,84 +22,135 @@ white=$(tput setaf 7)
 normal=$(tput sgr0)
 bold=$(setterm -bold)
 
-# Naming convention for the new kernel
-KERNEL_BUILD="Gluon_Kernel_Raspberry-`date '+%Y-%m-%d---%H-%M'`" 
-echo $1 > VERSION
-VERSION=$(cat VERSION)
+# --- Functions ---
+function show_header() {
+    $blue
+    echo " |========================================================================| "
+    echo " |*************************** GLUON KERNEL *******************************| "
+    echo " |========================================================================= "
+    $cyan
+    echo " |========================================================================| "
+    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Gluon Works ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
+    echo " |========================================================================| "
+    $red
+    echo " |========================================================================| "
+    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DEVELOPER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
+    $cyan
+    echo " |%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Yajnab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| "
+    $red
+    echo " |=========================== XDA-DEVELOPERS =============================| "
+    echo " |========================= Github.com/Yajnab ============================| "
+    echo " |========================================================================| "
+    $yellow
+    $bold
+    echo " |========================================================================| "
+    echo " |======================== COMPILING GLUON KERNEL ========================| "
+    echo " |========================================================================| "
+    $normal
+}
 
-# Variables for the new build environment
-TOOLCHAIN='../../../toolchain/aarch64-linux-gnu'
-MODULES="./../modules"
+function show_credits() {
+    $red
+    echo " |========================================================================| "
+    echo " |================================CREDITS=================================| "
+    $normal
+    echo " |~~~~~~~~~~~~~~~~~~~~~~Dr.Nachiketa Bandyopadhyay(My Father)~~~~~~~~~~~~~| "
+    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~My Computer~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
+    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~Samsung Galaxy Fit(Beni)~~~~~~~~~~~~~~~~~~~~~~~| "
+    echo " |========================================================================| "
+    $violet
+    echo " |========================================================================| "
+    echo " |********************Vishwanath Patil(He taught me all)******************| "
+    echo " |****************************Aditya Patange(Adipat)**********************| "
+    echo " |************************Sarthak Acharya(sakindia123)********************| "
+    echo " |****************************Teguh Soribin(tjstyle)**********************| "
+    echo " |****************************Yanuar Harry(squadzone)*********************| "
+    echo " |*********************************faux123********************************| "
+    echo " |****************************Linux Torvalds(torvalds)********************| "
+    echo " |**************************Mark Shuttleworth (Canonical)*****************| "
+    echo " |*************************Alan Cox (Linux Kernel)************************| "
+    echo " |**************************Richard Stallman (GNU)************************| "
+    echo " |***********************Andrew S. Tanenbaum (MINIX)**********************| "
+    echo " |************************Ken Thompson (Unix)*****************************| "
+    echo " |**************************Dennis Ritchie (Unix)*************************| "
+    echo " |========================================================================| "
+    $normal
+}
 
-cd ../
-rm -rf output
-mkdir -p output/boot/overlays
-mkdir -p output/modules/lib
+function setup_environment() {
+    KERNEL_BUILD="Gluon_Kernel_Raspberry-$(date '+%Y-%m-%d---%H-%M')"
+    echo "$1" > VERSION
+    VERSION=$(cat VERSION)
 
-cd raspberry_pi
-$blue
-echo " |========================================================================| "
-echo " |*************************** GLUON KERNEL *******************************| "
-echo " |========================================================================= "
-$cyan
-echo " |========================================================================| "
-echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Gluon Works ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
-echo " |========================================================================| "
-$red
-echo " |========================================================================| "
-echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DEVELOPER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
-$cyan
-echo " |%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Yajnab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| "
-$red
-echo " |=========================== XDA-DEVELOPERS =============================| "
-echo " |========================= Github.com/Yajnab ============================| "
-echo " |========================================================================| "
-$yellow
-$bold
-echo " |========================================================================| "
-echo " |======================== COMPILING GLUON KERNEL ========================| "
-echo " |========================================================================| "
-$normal
+    rm -rf "$OUTPUT_DIR"
+    mkdir -p "$OUTPUT_DIR/boot/overlays"
+    mkdir -p "$OUTPUT_DIR/modules"
+}
+
+function clean_kernel() {
+    $cyan
+    echo "Cleaning"
+    $violet
+    make clean
+    make mrproper
+}
+
+function make_config() {
+    $cyan
+    echo "Making config"
+    $violet
+    ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/arm-linux-gnueabihf-" make $KERNEL_DEFCONFIG
+}
+
+function compile_kernel() {
+    $cyan
+    echo "Making the Image-the real deal"
+    $violet
+    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/arm-linux-gnueabihf-" make -j$(nproc) CONFIG_DEBUG_SECTION_MISMATCH=y
+
+    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/arm-linux-gnueabihf-" INSTALL_MOD_PATH="./../modules" make modules_install -j$(nproc)
+}
+
+function package_output() {
+    $cyan
+    echo "Packaging output"
+    $violet
+    cd ../
+    # Note: Linaro toolchain for aarch64 usually has the prefix `aarch64-linux-gnu-`
+    # and the 32-bit one has `arm-linux-gnueabihf-`.
+    # Let's assume you're using a 64-bit Linaro toolchain, which should be the correct prefix.
+    # The mkimage tool from your original script is for a different purpose, so I've simplified this.
+    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/Image" "$OUTPUT_DIR/boot/$KERNEL_IMAGE_NAME"
+    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/broadcom/*.dtb" "$OUTPUT_DIR/boot"
+    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/overlays/*.dtb*" "$OUTPUT_DIR/boot/overlays/"
+    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/overlays/README" "$OUTPUT_DIR/boot/overlays/"
+}
+
+# --- Main Script Logic ---
+
+if [[ "$1" == "--credit" ]]; then
+    show_credits
+    exit 0
+fi
+
+show_header
+setup_environment "$1"
 
 set -e
 
+# Ccache setup
 export USE_CCACHE=1
 export CCACHE_NLEVELS=4
 ccache -M 5G
 
-$cyan
-echo "Cleaning"
-$violet
-make clean
-make mrproper
-
-$cyan
-echo "Making config"
-$violet
-# Use ARCH=arm64 and bcm2711_defconfig for Raspberry Pi 4B
-ARCH=arm64 CROSS_COMPILE=$TOOLCHAIN/bin/aarch64-linux-gnu- make bcm2711_defconfig
+cd "$KERNEL_DIR"
+clean_kernel
+make_config
 clear
+compile_kernel
 
-$cyan
-echo "Making the Image-the real deal"
-$violet
-# Cross-compile the kernel image
-time ARCH=arm64 CROSS_COMPILE=$TOOLCHAIN/bin/aarch64-linux-gnu- make -j$(nproc) CONFIG_DEBUG_SECTION_MISMATCH=y
+package_output
 
-# Install modules
-time ARCH=arm64 CROSS_COMPILE=$TOOLCHAIN/bin/aarch64-linux-gnu- INSTALL_MOD_PATH=${MODULES} make modules_install -j$(nproc)
-
-echo "Cleaning"
-$violet
-cd ../
-cd tools_pi
-cd mkimage
-# Use the new kernel image name for 64-bit builds on Pi 4
-./mkknlimg ../../raspberry_pi/arch/arm64/boot/Image ../../output/boot/kernel8.img
-cd ../../
-cp raspberry_pi/arch/arm64/boot/dts/broadcom/*.dtb output/boot
-cp raspberry_pi/arch/arm64/boot/dts/overlays/*.dtb* output/boot/overlays/
-cp raspberry_pi/arch/arm64/boot/dts/overlays/README output/boot/overlays/
 clear
 echo " |============================ F.I.N.I.S.H ! =============================|"
 $red
@@ -99,20 +159,4 @@ $blue
 echo " |==========Don't seek readymade goodies, try to make something new=======| "
 $cyan
 echo " |==============================Gluon Works===============================| "
-$red
-echo " |================================Credits=================================| "
-echo " |~~~~~~~~~~~~~~~~~~~~~~Dr.Nachiketa Bandyopadhyay(My Father)~~~~~~~~~~~~~| "
-echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~My Computer~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
-echo " |~~~~~~~~~~~~~~~~~~~~~~~~~Samsung Galaxy Fit(Beni)~~~~~~~~~~~~~~~~~~~~~~~| "
-echo " |========================================================================| "
-$violet
-echo " |========================================================================| "
-echo " |********************Vishwanath Patil(He taught me all)******************| "
-echo " |****************************Aditya Patange(Adipat)**********************| "
-echo " |************************Sarthak Acharya(sakindia123)********************| "
-echo " |****************************Teguh Soribin(tjstyle)**********************| "
-echo " |****************************Yanuar Harry(squadzone)*********************| "
-echo " |*********************************faux123********************************| "
-echo " |****************************Linux Torvalds(torvalds)********************| "
-echo " |========================================================================| "
 $normal

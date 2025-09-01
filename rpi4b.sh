@@ -73,6 +73,18 @@ function show_credits() {
     echo " |***********************Andrew S. Tanenbaum (MINIX)**********************| "
     echo " |************************Ken Thompson (Unix)*****************************| "
     echo " |**************************Dennis Ritchie (Unix)*************************| "
+    echo " |**************************Rob Pike (Plan 9)*****************************| "
+    echo " |***********************Bill Gates (Microsoft)***************************| "
+    echo " |************************Steve Jobs (Apple)******************************| "
+    echo " |******************Dr. Hans-Juergen (Embedded Systems Guru)**************| "
+    echo " |**************************Erich Gamma (Design Patterns)*****************| "
+    echo " |***********************James Gosling (Java)*****************************| "
+    echo " |*********************Bjarne Stroustrup (C++)****************************| "
+    echo " |*********************Guido van Rossum (Python)**************************| "
+    echo " |*********************Tim Berners-Lee (World Wide Web)*******************| "
+    echo " |********************Vint Cerf and Bob Kahn (Internet)*******************| "
+    echo " |***********************Grace Hopper (COBOL)*****************************| "
+    echo " |**********************Linus Torvalds (Git)******************************| "
     echo " |========================================================================| "
     $normal
 }
@@ -99,16 +111,16 @@ function make_config() {
     $cyan
     echo "Making config"
     $violet
-    ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/arm-linux-gnueabihf-" make $KERNEL_DEFCONFIG
+    ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-" make $KERNEL_DEFCONFIG
 }
 
 function compile_kernel() {
     $cyan
     echo "Making the Image-the real deal"
     $violet
-    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/arm-linux-gnueabihf-" make -j$(nproc) CONFIG_DEBUG_SECTION_MISMATCH=y
+    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-" make -j$(nproc) CONFIG_DEBUG_SECTION_MISMATCH=y
 
-    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/arm-linux-gnueabihf-" INSTALL_MOD_PATH="./../modules" make modules_install -j$(nproc)
+    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-" INSTALL_MOD_PATH="./../modules" make modules_install -j$(nproc)
 }
 
 function package_output() {
@@ -116,10 +128,6 @@ function package_output() {
     echo "Packaging output"
     $violet
     cd ../
-    # Note: Linaro toolchain for aarch64 usually has the prefix `aarch64-linux-gnu-`
-    # and the 32-bit one has `arm-linux-gnueabihf-`.
-    # Let's assume you're using a 64-bit Linaro toolchain, which should be the correct prefix.
-    # The mkimage tool from your original script is for a different purpose, so I've simplified this.
     cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/Image" "$OUTPUT_DIR/boot/$KERNEL_IMAGE_NAME"
     cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/broadcom/*.dtb" "$OUTPUT_DIR/boot"
     cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/overlays/*.dtb*" "$OUTPUT_DIR/boot/overlays/"

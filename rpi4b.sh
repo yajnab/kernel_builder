@@ -1,16 +1,41 @@
 
 #!/bin/bash
-
+set -euo pipefail
 # Updated Gluon Kernel Compiler for Raspberry Pi 4B (64-bit) with Linaro toolchain and modular design
 
 # --- Configuration ---
 # You can customize these variables
 readonly KERNEL_ARCH="arm64"
 readonly KERNEL_DEFCONFIG="bcm2711_defconfig"
-readonly TOOLCHAIN_PATH="$HOME/toolchains/LLVM-21.1.0-Linux-ARM64"
+readonly TOOLCHAIN_PATH="$HOME/toolchains/"
 readonly OUTPUT_DIR="$HOME/rpi4b/out/"
 readonly KERNEL_DIR="$HOME/rpi4b/linux_raspberryPi/"
 readonly KERNEL_IMAGE_NAME="kernel8.img"
+
+# --- Toolchain / Build tools ---
+# Prefer explicit full path to LLVM bin dir
+if [[ ! -x "${TOOLCHAIN_PATH}/bin/clang" ]]; then
+    echo "ERROR: clang not found in ${TOOLCHAIN_PATH}/bin"
+    echo "Extract the tar.xz and set TOOLCHAIN_PATH to the extracted folder."
+    exit 1
+fi
+
+#---Linaro LLVM Variables--
+export LLVM='$TOOLCHAIN_PATH/LLVM-21.1.0-Linux-ARM64/bin'
+export PATH=$LLVM:$PATH
+
+# Tell kernel make to use clang/ld.lld
+export CC=clang
+export LD=ld.lld
+export AR=llvm-ar
+export NM=llvm-nm
+export OBJCOPY=llvm-objcopy
+export OBJDUMP=llvm-objdump
+export READELF=llvm-readelf
+export STRIP=llvm-strip
+
+# Cross compile target triple for aarch64
+export CROSS_COMPILE=aarch64-linux-gnu-
 
 # --- Colors ---
 red=$(tput setaf 1)
@@ -147,10 +172,15 @@ setup_environment "$1"
 
 set -e
 
+# Basic checks
+ensure_bin make
+
 # Ccache setup
-export USE_CCACHE=1
-export CCACHE_NLEVELS=4
-ccache -M 5G
+if command -v ccache >/dev/null 2>&1; then
+    export USE_CCACHE=1
+    export CCACHE_NLEVELS=4
+    ccache -M 5G || true
+fi
 
 cd "$KERNEL_DIR"
 clean_kernel

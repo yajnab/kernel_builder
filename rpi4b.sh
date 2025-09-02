@@ -12,22 +12,22 @@ readonly OUTPUT_DIR="$HOME/rpi4b/out"
 readonly KERNEL_DIR="$HOME/rpi4b/linux_raspberryPi"
 readonly KERNEL_IMAGE_NAME="kernel8.img"
 
-#---Linaro LLVM Variables--
-LLVM="$TOOLCHAIN_DIR/LLVM-21.1.0-Linux-ARM64"
+# --- Linaro LLVM Variables ---
+LLVM="$TOOLCHAIN_DIR/LLVM-21.1.0-Linux-X64"
 TOOLCHAIN_PATH="$LLVM"
-echo "${TOOLCHAIN_PATH}"
-export PATH=$TOOLCHAIN_PATH/bin:$PATH
+
+echo "Using toolchain from: ${TOOLCHAIN_PATH}"
+export PATH="${TOOLCHAIN_PATH}/bin:$PATH"
+
 # --- Toolchain / Build tools ---
-# Prefer explicit full path to LLVM bin dir
+# Verify clang exists
 if [[ ! -x "${TOOLCHAIN_PATH}/bin/clang" ]]; then
     echo "ERROR: clang not found in ${TOOLCHAIN_PATH}/bin"
-    echo "Extract the tar.xz and set TOOLCHAIN_PATH to the extracted folder."
+    echo "Extract the tar.xz properly and set TOOLCHAIN_PATH to the extracted folder."
     exit 1
 fi
 
-
-
-# Tell kernel make to use clang/ld.lld
+# Tell kernel build system to use LLVM toolchain
 export CC=clang
 export LD=ld.lld
 export AR=llvm-ar
@@ -37,12 +37,16 @@ export OBJDUMP=llvm-objdump
 export READELF=llvm-readelf
 export STRIP=llvm-strip
 
-# Cross compile target triple for aarch64
-export CROSS_COMPILE='$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-'
+# Cross-compile for ARM64 (Raspberry Pi)
+# Do NOT quote, otherwise it's a literal string
+export CROSS_COMPILE=aarch64-linux-gnu-
+export ARCH=arm64
+
 
 # --- Colors ---
 red=$(tput setaf 1)
 green=$(tput setaf 2)
+yellow=$(tput setaf 3)
 yellow=$(tput setaf 3)
 blue=$(tput setaf 4)
 violet=$(tput setaf 5)
@@ -53,41 +57,35 @@ bold=$(tput bold)
 
 # --- Functions ---
 function show_header() {
-    $blue
-    echo " |========================================================================| "
-    echo " |*************************** GLUON KERNEL *******************************| "
-    echo " |========================================================================= "
-    $cyan
-    echo " |========================================================================| "
-    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Gluon Works ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
-    echo " |========================================================================| "
-    $red
-    echo " |========================================================================| "
-    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DEVELOPER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
-    $cyan
-    echo " |%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Yajnab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| "
-    $red
-    echo " |=========================== XDA-DEVELOPERS =============================| "
-    echo " |========================= Github.com/Yajnab ============================| "
-    echo " |========================================================================| "
-    $yellow
-    $bold
-    echo " |========================================================================| "
-    echo " |======================== COMPILING GLUON KERNEL ========================| "
-    echo " |========================================================================| "
-    $normal
+    
+    echo "${blue} |========================================================================| "
+    echo "${blue} |*************************** GLUON KERNEL *******************************| "
+    echo "${blue} |========================================================================= "    
+    echo "${cyan} |========================================================================| "
+    echo "${cyan} |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Gluon Works ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
+    echo "${cyan} |========================================================================| "    
+    echo "${red} |========================================================================| "
+    echo "${red} |~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DEVELOPER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "    
+    echo "${cyan} |%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Yajnab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| "    
+    echo "${red} |=========================== XDA-DEVELOPERS =============================| "
+    echo "${red} |========================= Github.com/Yajnab ============================| "
+    echo "${red} |========================================================================| "    
+    echo "${yellow}${bold} |========================================================================| "
+    echo "${yellow}${bold}|======================== COMPILING GLUON KERNEL ========================| "
+    echo "${yellow}${bold}|========================================================================| ${normal}"
+    
 }
 
 function show_credits() {
-    $red
+    ##$red
     echo " |========================================================================| "
     echo " |================================CREDITS=================================| "
-    $normal
+    #$normal
     echo " |~~~~~~~~~~~~~~~~~~~~~~Dr.Nachiketa Bandyopadhyay(My Father)~~~~~~~~~~~~~| "
     echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~My Computer~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
     echo " |~~~~~~~~~~~~~~~~~~~~~~~~~Samsung Galaxy Fit(Beni)~~~~~~~~~~~~~~~~~~~~~~~| "
     echo " |========================================================================| "
-    $violet
+    ##$violet
     echo " |========================================================================| "
     echo " |********************Vishwanath Patil(He taught me all)******************| "
     echo " |****************************Aditya Patange(Adipat)**********************| "
@@ -115,7 +113,7 @@ function show_credits() {
     echo " |***********************Grace Hopper (COBOL)*****************************| "
     echo " |**********************Linus Torvalds (Git)******************************| "
     echo " |========================================================================| "
-    $normal
+    ##$normal
 }
 
 function ensure_bin() {
@@ -139,15 +137,15 @@ function clean_kernel() {
 
 function make_config() {
     echo "${cyan}Making defconfig: ${KERNEL_DEFCONFIG}${normal}"
-    make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} CROSS_COMPILE=${CROSS_COMPILE} ${KERNEL_DEFCONFIG}
+    make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} LLVM=1 ${KERNEL_DEFCONFIG}
 }
 
 function compile_kernel() {
     echo "${cyan}Building kernel (this will take time)...${normal}"
-    time make -C "${KERNEL_DIR}" -j"$(nproc)" ARCH=${KERNEL_ARCH} CROSS_COMPILE=${CROSS_COMPILE} CC=${CC} LD=${LD}
+    time make -C "${KERNEL_DIR}" -j"$(nproc)" ARCH=${KERNEL_ARCH} LLVM=1 CC=${CC} LD=${LD}
 
     echo "${cyan}Installing modules to temporary dir...${normal}"
-    time make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} CROSS_COMPILE=${CROSS_COMPILE} INSTALL_MOD_PATH="${OUTPUT_DIR}/modules" modules_install -j"$(nproc)"
+    time make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} LLVM=1 INSTALL_MOD_PATH="${OUTPUT_DIR}/modules" modules_install -j"$(nproc)"
 }
 
 function package_output() {
@@ -172,7 +170,7 @@ if [[ "${1:-}" == "--credit" ]]; then
 fi
 
 show_header
-setup_environment "$1"
+setup_environment "${1:-default}"
 
 set -e
 
@@ -189,17 +187,14 @@ fi
 cd "$KERNEL_DIR"
 clean_kernel
 make_config
-clear
+#clear
+echo "${red}${bold} COMPILING KERNEL"
 compile_kernel
 
 package_output
 
-clear
-echo " |============================ F.I.N.I.S.H ! =============================|"
-$red
-echo " |==========================Flash it and Enjoy============================| "
-$blue
-echo " |==========Don't seek readymade goodies, try to make something new=======| "
-$cyan
-echo " |==============================Gluon Works===============================| "
-$normal
+#clear
+echo "${red} |============================ F.I.N.I.S.H ! =============================|"
+echo "${red} |==========================Flash it and Enjoy============================| "
+echo "${blue} |==========Don't seek readymade goodies, try to make something new=======| "
+echo "${cyan} |==============================Gluon Works===============================| ${normal}"

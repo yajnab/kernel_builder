@@ -166,7 +166,7 @@ function package_output() {
 }
 # --- Main Script Logic ---
 
-if [[ "$1" == "--credit" ]]; then
+if [[ "${1:-}" == "--credit" ]]; then
     show_credits
     exit 0
 fi

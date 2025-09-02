@@ -35,7 +35,7 @@ export READELF=llvm-readelf
 export STRIP=llvm-strip
 
 # Cross compile target triple for aarch64
-export CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE='$LLVM/aarch64-linux-gnu-'
 
 # --- Colors ---
 red=$(tput setaf 1)
@@ -115,51 +115,52 @@ function show_credits() {
     $normal
 }
 
-function setup_environment() {
-    KERNEL_BUILD="Gluon_Kernel_Raspberry-$(date '+%Y-%m-%d---%H-%M')"
-    echo "$1" > VERSION
-    VERSION=$(cat VERSION)
+function ensure_bin() {
+    command -v "$1" >/dev/null 2>&1 || { echo "ERROR: required tool '$1' not found in PATH"; exit 1; }
+}
 
-    rm -rf "$OUTPUT_DIR"
-    mkdir -p "$OUTPUT_DIR/boot/overlays"
-    mkdir -p "$OUTPUT_DIR/modules"
+function setup_environment() {
+    local version_text="${1:-Gluon_Kernel}"
+    KERNEL_BUILD="Gluon_Kernel_Raspberry-$(date '+%Y-%m-%d---%H-%M')"
+    echo "$version_text" > "${KERNEL_DIR}/VERSION" || true
+
+    rm -rf "${OUTPUT_DIR}"
+    mkdir -p "${OUTPUT_DIR}/boot/overlays"
+    mkdir -p "${OUTPUT_DIR}/modules"
 }
 
 function clean_kernel() {
-    $cyan
-    echo "Cleaning"
-    $violet
-    make clean
-    make mrproper
+    echo "${cyan}Cleaning kernel tree...${normal}"
+    make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} mrproper
 }
 
 function make_config() {
-    $cyan
-    echo "Making config"
-    $violet
-    ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-" make $KERNEL_DEFCONFIG
+    echo "${cyan}Making defconfig: ${KERNEL_DEFCONFIG}${normal}"
+    make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} CROSS_COMPILE=${CROSS_COMPILE} ${KERNEL_DEFCONFIG}
 }
 
 function compile_kernel() {
-    $cyan
-    echo "Making the Image-the real deal"
-    $violet
-    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-" make -j$(nproc) CONFIG_DEBUG_SECTION_MISMATCH=y
+    echo "${cyan}Building kernel (this will take time)...${normal}"
+    time make -C "${KERNEL_DIR}" -j"$(nproc)" ARCH=${KERNEL_ARCH} CROSS_COMPILE=${CROSS_COMPILE} CC=${CC} LD=${LD}
 
-    time ARCH=$KERNEL_ARCH CROSS_COMPILE="$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-" INSTALL_MOD_PATH="./../modules" make modules_install -j$(nproc)
+    echo "${cyan}Installing modules to temporary dir...${normal}"
+    time make -C "${KERNEL_DIR}" ARCH=${KERNEL_ARCH} CROSS_COMPILE=${CROSS_COMPILE} INSTALL_MOD_PATH="${OUTPUT_DIR}/modules" modules_install -j"$(nproc)"
 }
 
 function package_output() {
-    $cyan
-    echo "Packaging output"
-    $violet
-    cd ../
-    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/Image" "$OUTPUT_DIR/boot/$KERNEL_IMAGE_NAME"
-    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/broadcom/*.dtb" "$OUTPUT_DIR/boot"
-    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/overlays/*.dtb*" "$OUTPUT_DIR/boot/overlays/"
-    cp "$KERNEL_DIR/arch/$KERNEL_ARCH/boot/dts/overlays/README" "$OUTPUT_DIR/boot/overlays/"
-}
+    echo "${cyan}Packaging output...${normal}"
+    # kernel Image
+    cp "${KERNEL_DIR}/arch/${KERNEL_ARCH}/boot/Image" "${OUTPUT_DIR}/boot/${KERNEL_IMAGE_NAME}"
 
+    # dtbs: expand glob without quotes
+    cp ${KERNEL_DIR}/arch/${KERNEL_ARCH}/boot/dts/broadcom/*.dtb "${OUTPUT_DIR}/boot/" || true
+
+    # overlays (some files may be .dtbo)
+    cp -v ${KERNEL_DIR}/arch/${KERNEL_ARCH}/boot/dts/overlays/* "${OUTPUT_DIR}/boot/overlays/" 2>/dev/null || true
+
+    # modules are already installed into OUTPUT_DIR/modules
+    echo "Modules placed in ${OUTPUT_DIR}/modules"
+}
 # --- Main Script Logic ---
 
 if [[ "$1" == "--credit" ]]; then

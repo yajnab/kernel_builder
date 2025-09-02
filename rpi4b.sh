@@ -14,7 +14,6 @@ readonly KERNEL_IMAGE_NAME="kernel8.img"
 
 #---Linaro LLVM Variables--
 export LLVM='$TOOLCHAIN_DIR/LLVM-21.1.0-Linux-ARM64'
-export PATH=$LLVM:$PATH
 TOOLCHAIN_PATH='$LLVM'
 export PATH=$TOOLCHAIN_PATH/bin:$PATH
 # --- Toolchain / Build tools ---

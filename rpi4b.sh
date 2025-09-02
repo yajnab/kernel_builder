@@ -49,7 +49,7 @@ violet=$(tput setaf 5)
 cyan=$(tput setaf 6)
 white=$(tput setaf 7)
 normal=$(tput sgr0)
-bold=$(setterm -bold)
+bold=$(tput bold)
 
 # --- Functions ---
 function show_header() {

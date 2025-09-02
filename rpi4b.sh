@@ -7,11 +7,16 @@ set -euo pipefail
 # You can customize these variables
 readonly KERNEL_ARCH="arm64"
 readonly KERNEL_DEFCONFIG="bcm2711_defconfig"
-readonly TOOLCHAIN_PATH="$HOME/toolchains/"
-readonly OUTPUT_DIR="$HOME/rpi4b/out/"
-readonly KERNEL_DIR="$HOME/rpi4b/linux_raspberryPi/"
+readonly TOOLCHAIN_DIR="$HOME/toolchains"
+readonly OUTPUT_DIR="$HOME/rpi4b/out"
+readonly KERNEL_DIR="$HOME/rpi4b/linux_raspberryPi"
 readonly KERNEL_IMAGE_NAME="kernel8.img"
 
+#---Linaro LLVM Variables--
+export LLVM='$TOOLCHAIN_DIR/LLVM-21.1.0-Linux-ARM64'
+export PATH=$LLVM:$PATH
+TOOLCHAIN_PATH='$LLVM'
+export PATH=$TOOLCHAIN_PATH/bin:$PATH
 # --- Toolchain / Build tools ---
 # Prefer explicit full path to LLVM bin dir
 if [[ ! -x "${TOOLCHAIN_PATH}/bin/clang" ]]; then
@@ -20,9 +25,7 @@ if [[ ! -x "${TOOLCHAIN_PATH}/bin/clang" ]]; then
     exit 1
 fi
 
-#---Linaro LLVM Variables--
-export LLVM='$TOOLCHAIN_PATH/LLVM-21.1.0-Linux-ARM64/bin'
-export PATH=$LLVM:$PATH
+
 
 # Tell kernel make to use clang/ld.lld
 export CC=clang
@@ -35,7 +38,7 @@ export READELF=llvm-readelf
 export STRIP=llvm-strip
 
 # Cross compile target triple for aarch64
-export CROSS_COMPILE='$LLVM/aarch64-linux-gnu-'
+export CROSS_COMPILE='$TOOLCHAIN_PATH/bin/aarch64-linux-gnu-'
 
 # --- Colors ---
 red=$(tput setaf 1)

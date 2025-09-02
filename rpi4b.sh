@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # Updated Gluon Kernel Compiler for Raspberry Pi 4B (64-bit) with Linaro toolchain and modular design
@@ -6,9 +7,9 @@
 # You can customize these variables
 readonly KERNEL_ARCH="arm64"
 readonly KERNEL_DEFCONFIG="bcm2711_defconfig"
-readonly TOOLCHAIN_PATH="../../../toolchain/linaro"
-readonly OUTPUT_DIR="output"
-readonly KERNEL_DIR="raspberry_pi"
+readonly TOOLCHAIN_PATH="$HOME/toolchains/LLVM-21.1.0-Linux-ARM64"
+readonly OUTPUT_DIR="$HOME/rpi4b/out/"
+readonly KERNEL_DIR="$HOME/rpi4b/linux_raspberryPi/"
 readonly KERNEL_IMAGE_NAME="kernel8.img"
 
 # --- Colors ---

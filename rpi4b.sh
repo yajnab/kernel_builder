@@ -1,7 +1,7 @@
 
 #!/bin/bash
 set -euo pipefail
-# Updated Gluon Kernel Compiler for Raspberry Pi 4B (64-bit) with Linaro toolchain and modular design
+# Updated DYANK Kernel Compiler for Raspberry Pi 4B (64-bit) with Linaro toolchain and modular design
 
 # --- Configuration ---
 # You can customize these variables
@@ -59,61 +59,20 @@ bold=$(tput bold)
 function show_header() {
     
     echo "${blue} |========================================================================| "
-    echo "${blue} |*************************** GLUON KERNEL *******************************| "
+    echo "${blue} |*************************** DYANK KERNEL *******************************| "
     echo "${blue} |========================================================================= "    
     echo "${cyan} |========================================================================| "
-    echo "${cyan} |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Gluon Works ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
+    echo "${cyan} |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DYANK ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
     echo "${cyan} |========================================================================| "    
     echo "${red} |========================================================================| "
     echo "${red} |~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DEVELOPER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "    
-    echo "${cyan} |%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Yajnab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| "    
-    echo "${red} |=========================== XDA-DEVELOPERS =============================| "
-    echo "${red} |========================= Github.com/Yajnab ============================| "
+    echo "${cyan} |%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% yajnab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%| "
+    echo "${red} |========================= Github.com/yajnab ============================| "
     echo "${red} |========================================================================| "    
     echo "${yellow}${bold} |========================================================================| "
-    echo "${yellow}${bold}|======================== COMPILING GLUON KERNEL ========================| "
+    echo "${yellow}${bold}|======================== COMPILING DYANK KERNEL ========================| "
     echo "${yellow}${bold}|========================================================================| ${normal}"
     
-}
-
-function show_credits() {
-    ##$red
-    echo " |========================================================================| "
-    echo " |================================CREDITS=================================| "
-    #$normal
-    echo " |~~~~~~~~~~~~~~~~~~~~~~Dr.Nachiketa Bandyopadhyay(My Father)~~~~~~~~~~~~~| "
-    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~My Computer~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~| "
-    echo " |~~~~~~~~~~~~~~~~~~~~~~~~~Samsung Galaxy Fit(Beni)~~~~~~~~~~~~~~~~~~~~~~~| "
-    echo " |========================================================================| "
-    ##$violet
-    echo " |========================================================================| "
-    echo " |********************Vishwanath Patil(He taught me all)******************| "
-    echo " |****************************Aditya Patange(Adipat)**********************| "
-    echo " |************************Sarthak Acharya(sakindia123)********************| "
-    echo " |****************************Teguh Soribin(tjstyle)**********************| "
-    echo " |****************************Yanuar Harry(squadzone)*********************| "
-    echo " |*********************************faux123********************************| "
-    echo " |****************************Linux Torvalds(torvalds)********************| "
-    echo " |**************************Mark Shuttleworth (Canonical)*****************| "
-    echo " |*************************Alan Cox (Linux Kernel)************************| "
-    echo " |**************************Richard Stallman (GNU)************************| "
-    echo " |***********************Andrew S. Tanenbaum (MINIX)**********************| "
-    echo " |************************Ken Thompson (Unix)*****************************| "
-    echo " |**************************Dennis Ritchie (Unix)*************************| "
-    echo " |**************************Rob Pike (Plan 9)*****************************| "
-    echo " |***********************Bill Gates (Microsoft)***************************| "
-    echo " |************************Steve Jobs (Apple)******************************| "
-    echo " |******************Dr. Hans-Juergen (Embedded Systems Guru)**************| "
-    echo " |**************************Erich Gamma (Design Patterns)*****************| "
-    echo " |***********************James Gosling (Java)*****************************| "
-    echo " |*********************Bjarne Stroustrup (C++)****************************| "
-    echo " |*********************Guido van Rossum (Python)**************************| "
-    echo " |*********************Tim Berners-Lee (World Wide Web)*******************| "
-    echo " |********************Vint Cerf and Bob Kahn (Internet)*******************| "
-    echo " |***********************Grace Hopper (COBOL)*****************************| "
-    echo " |**********************Linus Torvalds (Git)******************************| "
-    echo " |========================================================================| "
-    ##$normal
 }
 
 function ensure_bin() {
@@ -121,8 +80,8 @@ function ensure_bin() {
 }
 
 function setup_environment() {
-    local version_text="${1:-Gluon_Kernel}"
-    KERNEL_BUILD="Gluon_Kernel_Raspberry-$(date '+%Y-%m-%d---%H-%M')"
+    local version_text="${1:-DYANK_Kernel}"
+    KERNEL_BUILD="DYANK_Kernel_Raspberry-$(date '+%Y-%m-%d---%H-%M')"
     echo "$version_text" > "${KERNEL_DIR}/VERSION" || true
 
     rm -rf "${OUTPUT_DIR}"
@@ -164,11 +123,6 @@ function package_output() {
 }
 # --- Main Script Logic ---
 
-if [[ "${1:-}" == "--credit" ]]; then
-    show_credits
-    exit 0
-fi
-
 show_header
 setup_environment "${1:-default}"
 
@@ -197,4 +151,4 @@ package_output
 echo "${red} |============================ F.I.N.I.S.H ! =============================|"
 echo "${red} |==========================Flash it and Enjoy============================| "
 echo "${blue} |==========Don't seek readymade goodies, try to make something new=======| "
-echo "${cyan} |==============================Gluon Works===============================| ${normal}"
+echo "${cyan} |=================================DYANK==================================| ${normal}"

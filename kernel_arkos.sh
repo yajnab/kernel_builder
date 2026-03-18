@@ -89,6 +89,7 @@ function setup_environment() {
     # Output / staging
     mkdir -p "${ARKBUILD_DIR}/boot"
     mkdir -p "${ARKBUILD_DIR}/lib/modules"
+    mkdir -p "${ARKBUILD_DIR}/usr/bin"
 
     echo "Using toolchain from: ${TOOLCHAIN_DIR}"
     echo "Kernel source       : ${KERNEL_SRC}"

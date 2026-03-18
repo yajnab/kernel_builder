@@ -9,8 +9,15 @@ SCRIPT_VERSION=1.0
 readonly KERNEL_ARCH="arm64"
 readonly TOOLCHAIN_DIR="$HOME/toolchains/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu"
 # Script is in repo root; build folders are direct children
-readonly ARKOS_KERNEL_DIR="arkos_kernel"
+readonly ARKOS_KERNEL_DIR="kernel"
 readonly ARKBUILD_DIR="Arkbuild"
+
+
+mkdir -p "$ARKBUILD_DIR"
+rm -rf "$ARKBUILD_DIR"/*
+
+echo "Building inside: $ARKBUILD_DIR"
+
 
 # --- Colors ---
 red=$(tput setaf 1)

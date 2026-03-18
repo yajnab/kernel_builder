@@ -14,7 +14,7 @@ readonly ARKBUILD_DIR="Arkbuild"
 
 
 mkdir -p "$ARKBUILD_DIR"
-rm -rf "$ARKBUILD_DIR"/*
+sudo rm -rf "$ARKBUILD_DIR"/*
 
 echo "Building inside: $ARKBUILD_DIR"
 

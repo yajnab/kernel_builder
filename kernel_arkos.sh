@@ -100,6 +100,7 @@ function setup_environment() {
     mkdir -p "${ARKBUILD_DIR}/boot"
     mkdir -p "${ARKBUILD_DIR}/lib/modules"
     mkdir -p "${ARKBUILD_DIR}/usr/bin"
+    mkdir -p "${ARKBUILD_DIR}/dev/pts" "${ARKBUILD_DIR}/proc" "${ARKBUILD_DIR}/sys"
 
     ensure_path_exists "${KERNEL_SRC}" "kernel source directory"
     echo "Using toolchain from: ${TOOLCHAIN_DIR}"
@@ -124,11 +125,6 @@ function clean_kernel() {
     sudo rm -rf "${ARKBUILD_DIR}/proc"
     sudo rm -rf "${ARKBUILD_DIR}/sys"
 
-    mkdir -p "${ARKBUILD_DIR}/boot"
-    mkdir -p "${ARKBUILD_DIR}/lib/modules"
-    mkdir -p "${ARKBUILD_DIR}/usr/bin"
-
-
     # Some bundled OOT drivers can break `make mrproper`. Instead, combine
     # `make clean` with explicit removal of generated kernel artifacts.
     CFLAGS=-Wno-deprecated-declarations \
@@ -143,6 +139,12 @@ function clean_kernel() {
 
     # Remove generated defconfig snapshots from prior runs.
     sudo rm -f "${ARKBUILD_DIR}/boot/config-"*
+
+    mkdir -p "${ARKBUILD_DIR}/boot"
+    mkdir -p "${ARKBUILD_DIR}/lib/modules"
+    mkdir -p "${ARKBUILD_DIR}/usr/bin"
+    mkdir -p "${ARKBUILD_DIR}/dev/pts" "${ARKBUILD_DIR}/proc" "${ARKBUILD_DIR}/sys"
+
     cd "${SCRIPT_DIR}"
 }
 
@@ -288,8 +290,40 @@ function cleanup_rootfs() {
     set -e
 }
 
+function recover_stale_mounts_on_startup() {
+    echo "${yellow}Checking for stale mounts from previous interrupted runs...${normal}"
+
+    set +e
+
+    # Unmount in child-to-parent order to avoid busy mount errors.
+    if mountpoint -q "${ARKBUILD_DIR}/dev/pts"; then sudo umount -lf "${ARKBUILD_DIR}/dev/pts"; fi
+    if mountpoint -q "${ARKBUILD_DIR}/dev"; then sudo umount -lf "${ARKBUILD_DIR}/dev"; fi
+    if mountpoint -q "${ARKBUILD_DIR}/proc"; then sudo umount -lf "${ARKBUILD_DIR}/proc"; fi
+    if mountpoint -q "${ARKBUILD_DIR}/sys"; then sudo umount -lf "${ARKBUILD_DIR}/sys"; fi
+    if mountpoint -q "${ARKBUILD_DIR}/boot"; then sudo umount -lf "${ARKBUILD_DIR}/boot"; fi
+    if mountpoint -q "${ARKBUILD_DIR}"; then sudo umount -lf "${ARKBUILD_DIR}"; fi
+
+    # Detach any leftover loop devices attached to local image files.
+    local img
+    local loop_info
+    local loop_dev
+    for img in "${SCRIPT_DIR}"/*.img; do
+        [ -e "${img}" ] || continue
+        while IFS= read -r loop_info; do
+            [ -n "${loop_info}" ] || continue
+            loop_dev="${loop_info%%:*}"
+            sudo losetup -d "${loop_dev}" 2>/dev/null || true
+        done < <(sudo losetup -j "${img}" 2>/dev/null)
+    done
+
+    set -e
+}
+
 function call_chroot() {
     local cmd="$1"
+
+    # Ensure bind-mount targets exist even after aggressive cleanup paths.
+    sudo mkdir -p "${ARKBUILD_DIR}/dev/pts" "${ARKBUILD_DIR}/proc" "${ARKBUILD_DIR}/sys"
 
     sudo mount --bind /dev "${ARKBUILD_DIR}/dev"
     sudo mount --bind /dev/pts "${ARKBUILD_DIR}/dev/pts"
@@ -316,9 +350,11 @@ ensure_bin make
 ensure_bin tar
 ensure_bin sudo
 ensure_bin losetup
+ensure_bin mountpoint
 ensure_env
 
 setup_environment
+recover_stale_mounts_on_startup
 reset_arkbuild_staging
 setup_rootfs
 

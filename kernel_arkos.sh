@@ -110,6 +110,9 @@ function setup_environment() {
 function clean_kernel() {
     cd "${KERNEL_SRC}"
     echo "${cyan}Running safe mrproper-like cleanup...${normal}"
+    # Remove stale modules from known previous kernel version before any clean step.
+    sudo rm -rf "${ARKBUILD_DIR}/lib/modules"
+
     # Some bundled OOT drivers can break `make mrproper`. Instead, combine
     # `make clean` with explicit removal of generated kernel artifacts.
     CFLAGS=-Wno-deprecated-declarations \

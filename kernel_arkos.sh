@@ -13,7 +13,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly ARKOS_KERNEL_DIR="${SCRIPT_DIR}/kernel"
 readonly ARKBUILD_DIR="${SCRIPT_DIR}/Arkbuild"
 # --- RootFS / Image handling ---
-ROOTFS_TAR="${SCRIPT_DIR}/rootfs.tar.gz"
 LOOP_DEV=""
 IMG_FILE=""
 MOUNTED_ROOTFS=0
@@ -151,16 +150,8 @@ function setup_rootfs() {
     echo "${cyan}Setting up root filesystem from image...${normal}"
     local img_candidates=("${SCRIPT_DIR}"/*.img)
 
-    # Extract tar if needed
     if [ ! -e "${img_candidates[0]}" ]; then
-        ensure_path_exists "${ROOTFS_TAR}" "rootfs tarball"
-        echo "Extracting rootfs tar..."
-        tar -xpf "${ROOTFS_TAR}" -C "${SCRIPT_DIR}"
-        img_candidates=("${SCRIPT_DIR}"/*.img)
-    fi
-
-    if [ ! -e "${img_candidates[0]}" ]; then
-        echo "${red}ERROR: No .img file found after extracting ${ROOTFS_TAR}${normal}"
+        echo "${red}ERROR: No .img file found in ${SCRIPT_DIR}${normal}"
         exit 1
     fi
 
@@ -288,7 +279,6 @@ ensure_bin make
 ensure_bin tar
 ensure_bin sudo
 ensure_bin losetup
-ensure_bin mkimage
 ensure_env
 
 setup_environment

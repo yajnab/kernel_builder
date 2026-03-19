@@ -112,6 +112,22 @@ function clean_kernel() {
     echo "${cyan}Running safe mrproper-like cleanup...${normal}"
     # Remove stale modules from known previous kernel version before any clean step.
     sudo rm -rf "${ARKBUILD_DIR}/lib/modules"
+    sudo rm -rf "${ARKBUILD_DIR}/boot"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/bin"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/lib"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/share"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/local"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/sbin"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/bin"
+    sudo rm -rf "${ARKBUILD_DIR}/usr/bin"
+    sudo rm -rf "${ARKBUILD_DIR}/dev"
+    sudo rm -rf "${ARKBUILD_DIR}/proc"
+    sudo rm -rf "${ARKBUILD_DIR}/sys"
+
+    mkdir -p "${ARKBUILD_DIR}/boot"
+    mkdir -p "${ARKBUILD_DIR}/lib/modules"
+    mkdir -p "${ARKBUILD_DIR}/usr/bin"
+
 
     # Some bundled OOT drivers can break `make mrproper`. Instead, combine
     # `make clean` with explicit removal of generated kernel artifacts.

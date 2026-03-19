@@ -109,15 +109,22 @@ function setup_environment() {
 
 function clean_kernel() {
     cd "${KERNEL_SRC}"
-    echo "${cyan}Cleaning kernel tree...${normal}"
-    # Some out-of-tree drivers (e.g. esp8089) expect a .config to exist in the
-    # configured kernel tree. Create a temporary empty .config if missing so
-    # mrproper can run cleanly; it will remove it anyway.
-    if [ ! -f .config ]; then
-        touch .config
-    fi
-    CFLAGS=-Wno-deprecated-declarations make ARCH="${KERNEL_ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" mrproper || true
+    echo "${cyan}Resetting kernel config state...${normal}"
+    # Avoid mrproper here: some bundled OOT drivers (esp8089) break clean targets.
+    # Defconfig below is sufficient to produce a deterministic configured tree.
+    rm -f .config
     cd "${SCRIPT_DIR}"
+}
+
+function reset_arkbuild_staging() {
+    echo "${cyan}Resetting Arkbuild staging directory...${normal}"
+    # Previous runs create root-owned content under Arkbuild via sudo operations.
+    # Remove stale outputs with sudo to avoid permission-denied failures later.
+    sudo rm -rf "${ARKBUILD_DIR}/lib/modules"
+    sudo rm -f "${ARKBUILD_DIR}/boot/Image" "${ARKBUILD_DIR}/boot/"*.dtb \
+        "${ARKBUILD_DIR}/boot/uInitrd" "${ARKBUILD_DIR}/boot/initrd.img" \
+        "${ARKBUILD_DIR}/boot/initrd.img"-* "${ARKBUILD_DIR}/boot/config-"*
+    mkdir -p "${ARKBUILD_DIR}/boot" "${ARKBUILD_DIR}/lib/modules" "${ARKBUILD_DIR}/usr/bin"
 }
 
 
@@ -282,6 +289,7 @@ ensure_bin losetup
 ensure_env
 
 setup_environment
+reset_arkbuild_staging
 setup_rootfs
 
 clean_kernel

@@ -149,7 +149,7 @@ function compile_kernel() {
     cd "${KERNEL_SRC}"
     echo "${cyan}Installing modules into Arkbuild (no SD / loop mounts)...${normal}"
     CFLAGS=-Wno-deprecated-declarations sudo make ARCH="${KERNEL_ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" \
-        INSTALL_MOD_PATH="${ARKBUILD_DIR}" modules_install
+        DEPMOD=/bin/true INSTALL_MOD_PATH="${ARKBUILD_DIR}" modules_install
     cd "${SCRIPT_DIR}"
 }
 

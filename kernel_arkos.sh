@@ -356,9 +356,11 @@ ensure_env
 setup_environment
 recover_stale_mounts_on_startup
 reset_arkbuild_staging
-setup_rootfs
 
 clean_kernel
+
+setup_rootfs
+
 make_config
 
 echo "${red}${bold} COMPILING ARKOS KERNEL${normal}"

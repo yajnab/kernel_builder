@@ -109,10 +109,21 @@ function setup_environment() {
 
 function clean_kernel() {
     cd "${KERNEL_SRC}"
-    echo "${cyan}Resetting kernel config state...${normal}"
-    # Avoid mrproper here: some bundled OOT drivers (esp8089) break clean targets.
-    # Defconfig below is sufficient to produce a deterministic configured tree.
-    rm -f .config
+    echo "${cyan}Running safe mrproper-like cleanup...${normal}"
+    # Some bundled OOT drivers can break `make mrproper`. Instead, combine
+    # `make clean` with explicit removal of generated kernel artifacts.
+    CFLAGS=-Wno-deprecated-declarations \
+        make -s ARCH="${KERNEL_ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" clean || true
+
+    rm -f .config Module.symvers modules.order System.map vmlinux vmlinuz \
+        .version .old_version .tmp_System.map
+    rm -rf .tmp_versions
+    rm -rf include/config include/generated
+    rm -rf arch/"${KERNEL_ARCH}"/include/generated
+    rm -rf arch/"${KERNEL_ARCH}"/boot/dts/*.dtb
+
+    # Remove generated defconfig snapshots from prior runs.
+    sudo rm -f "${ARKBUILD_DIR}/boot/config-"*
     cd "${SCRIPT_DIR}"
 }
 

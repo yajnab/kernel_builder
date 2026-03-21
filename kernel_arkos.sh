@@ -62,8 +62,8 @@ function ensure_path_exists() {
 }
 
 function ensure_env() {
-    # Default to rg351p / rk3326 if not provided
-    : "${UNIT:=rg351p}"
+    # Default to r36ultra / rk3326 if not provided
+    : "${UNIT:=r36ultra}"
     : "${CHIPSET:=rk3326}"
 
     echo "Target UNIT   : ${UNIT}"
@@ -89,6 +89,11 @@ function setup_environment() {
         else
             KERNEL_DTB="${CHIPSET}-odroidgo2-linux.dtb"
         fi
+    elif [ "${UNIT:-}" == "r36ultra" ]; then
+        KERNEL_SRC="${ARKOS_KERNEL_DIR}"
+        DEF_CONFIG="clone_defconfig"
+        SCREEN_ROTATION="0"
+        KERNEL_DTB="${CHIPSET}-${UNIT}-linux.dtb"
     else
         KERNEL_SRC="${ARKOS_KERNEL_DIR}"
         DEF_CONFIG="rg351p_tweaked_defconfig"

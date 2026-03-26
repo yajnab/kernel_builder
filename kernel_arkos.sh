@@ -23,15 +23,23 @@ echo "Building inside: $ARKBUILD_DIR"
 
 
 # --- Colors ---
-red=$(tput setaf 1)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-violet=$(tput setaf 5)
-cyan=$(tput setaf 6)
-white=$(tput setaf 7)
-normal=$(tput sgr0)
-bold=$(tput bold)
+# CI runners are typically non-interactive and may not define TERM, which breaks `tput`.
+# Make color output best-effort without failing the build.
+: "${TERM:=xterm-256color}"
+if command -v tput >/dev/null 2>&1; then
+    red=$(tput setaf 1 2>/dev/null || true)
+    green=$(tput setaf 2 2>/dev/null || true)
+    yellow=$(tput setaf 3 2>/dev/null || true)
+    blue=$(tput setaf 4 2>/dev/null || true)
+    violet=$(tput setaf 5 2>/dev/null || true)
+    cyan=$(tput setaf 6 2>/dev/null || true)
+    white=$(tput setaf 7 2>/dev/null || true)
+    normal=$(tput sgr0 2>/dev/null || true)
+    bold=$(tput bold 2>/dev/null || true)
+else
+    red=""; green=""; yellow=""; blue=""; violet=""; cyan=""; white=""
+    normal=""; bold=""
+fi
 
 # --- Functions ---
 function show_header() {

@@ -85,7 +85,12 @@ function setup_environment() {
     ensure_path_exists "${TOOLCHAIN_DIR}/bin" "toolchain bin directory"
     export PATH="${TOOLCHAIN_DIR}/bin:${PATH}"
     export ARCH="${KERNEL_ARCH}"
-    export CROSS_COMPILE=aarch64-linux-gnu-
+    if command -v ccache >/dev/null 2>&1 && [ -z "${CCACHE_DISABLE:-}" ]; then
+        export CROSS_COMPILE="ccache aarch64-linux-gnu-"
+        echo "${cyan}Kernel compiler: ccache + Linaro aarch64-linux-gnu- (CCACHE_DIR=${CCACHE_DIR:-${HOME}/.ccache})${normal}"
+    else
+        export CROSS_COMPILE=aarch64-linux-gnu-
+    fi
 
     # Kernel source / config (ArkOS style)
     if [ "${UNIT:-}" == "rgb10" ] || [ "${UNIT:-}" == "rk2020" ]; then
